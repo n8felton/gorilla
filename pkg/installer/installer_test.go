@@ -105,10 +105,12 @@ var (
 		},
 		Uninstaller: catalog.InstallerItem{
 			Arguments: []string{`-AllUsers`},
-			Hash:      `1bfb6e6f2a654cb0261d3493ff681f46130ed8f78e43f759f2ebab22ebc30b2d`,
-			Location:  `packages/chef-client/chef-client-14.3.37-1-x64uninst.msix`,
 			Type:      `msix`,
-			PackageID: `Gorilla.Test.App`,
+		},
+		Check: catalog.InstallCheck{
+			Appx: catalog.AppxCheck{
+				Name: `Gorilla.Test.App`,
+			},
 		},
 		Version: "1.0.0",
 	}
@@ -429,10 +431,8 @@ func TestUninstallItem(t *testing.T) {
 	// Msix
 	//
 	msixItem.DisplayName = statusNoActionNoError
-	msixUninstPath := "chef-client/chef-client-14.3.37-1-x64uninst.msix"
-	msixUninstURL := urlPackages + msixUninstPath
-	// Run Uninstall
-	actualMsix := uninstallItem(msixItem, msixUninstURL, cachePath)
+	// Run Uninstall (msix uses Check.Appx.Name, no file download needed)
+	actualMsix := uninstallItem(msixItem, "", cachePath)
 	// Check the result
 	msixCmd := filepath.Join(os.Getenv("WINDIR"), "system32/WindowsPowershell/v1.0/powershell.exe")
 	expectedMsix := "[" + msixCmd + " -NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -Command Get-AppxPackage -Name 'Gorilla.Test.App' | Remove-AppxPackage -AllUsers]"
@@ -550,22 +550,17 @@ func TestUninstallItemNupkgAmbiguousPackageID(t *testing.T) {
 	}
 }
 
-// TestUninstallItemMsixMissingPackageID verifies that uninstall returns an error when PackageID is empty
-func TestUninstallItemMsixMissingPackageID(t *testing.T) {
+// TestUninstallItemMsixMissingName verifies that uninstall returns an error when Check.Appx.Name is empty
+func TestUninstallItemMsixMissingName(t *testing.T) {
 	execCommand = fakeExecCommand
 	defer func() { execCommand = origExec }()
 
-	cachePath := "testdata/"
-	urlPackages := "https://example.com/"
-	msixUninstPath := "chef-client/chef-client-14.3.37-1-x64uninst.msix"
-	msixUninstURL := urlPackages + msixUninstPath
-
 	item := msixItem
-	item.DisplayName = "Missing PackageID App"
-	item.Uninstaller.PackageID = ""
+	item.DisplayName = "Missing Name App"
+	item.Check.Appx.Name = ""
 
-	actual := uninstallItem(item, msixUninstURL, cachePath)
-	expected := "PackageID is required for msix uninstall of Missing PackageID App"
+	actual := uninstallItem(item, "", "testdata/")
+	expected := "Check.Appx.Name is required for msix uninstall of Missing Name App"
 	if have, want := actual, expected; have != want {
 		t.Errorf("\n-----\nhave\n%s\nwant\n%s\n-----", have, want)
 	}

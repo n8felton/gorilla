@@ -219,6 +219,30 @@ func installItem(item catalog.Item, itemURL, cachePath string) string {
 
 func uninstallItem(item catalog.Item, itemURL, cachePath string) string {
 
+	// msix uninstall only needs the package name, no file download required
+	if item.Uninstaller.Type == "msix" {
+		gorillalog.Info("Uninstalling msix for", item.DisplayName)
+		if item.Check.Appx.Name == "" {
+			msg := fmt.Sprintf("Check.Appx.Name is required for msix uninstall of %s", item.DisplayName)
+			gorillalog.Warn(msg)
+			return msg
+		}
+		removeCmd := fmt.Sprintf("Get-AppxPackage -Name '%s' | Remove-AppxPackage", item.Check.Appx.Name)
+		if len(item.Uninstaller.Arguments) > 0 {
+			removeCmd += " " + strings.Join(item.Uninstaller.Arguments, " ")
+		}
+		uninstallCmd := commandPs1
+		uninstallArgs := []string{"-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", removeCmd}
+		uninstallerOut, errOut := runCommand(uninstallCmd, uninstallArgs)
+		if errOut != nil {
+			gorillalog.Warn(item.DisplayName, item.Version, "Uninstallation FAILED")
+		} else {
+			gorillalog.Info(item.DisplayName, item.Version, "Uninstallation SUCCESSFUL")
+		}
+		report.UninstalledItems = append(report.UninstalledItems, item)
+		return uninstallerOut
+	}
+
 	// Determine the paths needed for download and uinstall
 	relPath, fileName := path.Split(item.Uninstaller.Location)
 	absPath := filepath.Join(cachePath, relPath)
@@ -281,17 +305,6 @@ func uninstallItem(item catalog.Item, itemURL, cachePath string) string {
 		gorillalog.Info("Uninstalling ps1 for", item.DisplayName)
 		uninstallCmd = commandPs1
 		uninstallArgs = []string{"-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", absFile}
-
-	} else if item.Uninstaller.Type == "msix" {
-		gorillalog.Info("Uninstalling msix for", item.DisplayName)
-		if item.Uninstaller.PackageID == "" {
-			msg := fmt.Sprintf("PackageID is required for msix uninstall of %s", item.DisplayName)
-			gorillalog.Warn(msg)
-			return msg
-		}
-		uninstallCmd = commandPs1
-		uninstallArgs = []string{"-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", fmt.Sprintf("Get-AppxPackage -Name '%s' | Remove-AppxPackage", item.Uninstaller.PackageID)}
-		uninstallArgs = append(uninstallArgs, item.Uninstaller.Arguments...)
 
 	} else {
 		msg := fmt.Sprint("Unsupported uninstaller type", item.Uninstaller.Type)
