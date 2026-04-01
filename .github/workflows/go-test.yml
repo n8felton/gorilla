@@ -26,9 +26,8 @@ permissions:
   contents: read
 
 jobs:
-
-  build:
-    name: Build
+  go-test:
+    name: go-test
     runs-on: windows-latest
     timeout-minutes: 25
     steps:
