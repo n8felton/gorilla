@@ -277,15 +277,12 @@ function Build-Msix {
     <Resource Language="en-US" />
   </Resources>
   <Applications>
-    <Application Id="App" Executable="gorilla-it-stub.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="App" Executable="gorilla-it-stub.exe" EntryPoint="gorilla-it-stub.exe">
       <uap:VisualElements DisplayName="Gorilla Integration Test" Square150x150Logo="Assets\Square150x150Logo.png"
                           Square44x44Logo="Assets\Square44x44Logo.png" Description="Integration test stub"
                           BackgroundColor="transparent" />
     </Application>
   </Applications>
-  <Capabilities>
-    <Capability Name="runFullTrust" />
-  </Capabilities>
 </Package>
 "@ | Set-Content -LiteralPath $manifest -NoNewline
 
@@ -298,7 +295,7 @@ function Build-Msix {
     [IO.File]::WriteAllBytes((Join-Path $assetsDir "Square150x150Logo.png"), $pngBytes)
     [IO.File]::WriteAllBytes((Join-Path $assetsDir "Square44x44Logo.png"), $pngBytes)
 
-    # Minimal stub exe (empty PE — MakeAppx only requires the file exists for pack)
+    # Minimal stub exe (empty file — MakeAppx only requires the file exists for pack)
     $stubExe = Join-Path $versionRoot "gorilla-it-stub.exe"
     [IO.File]::WriteAllBytes($stubExe, [byte[]]@())
 
