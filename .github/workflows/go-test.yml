@@ -1,8 +1,7 @@
 name: go-test
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
     paths:
       - cmd/**
       - pkg/**
