@@ -220,7 +220,7 @@ func installItem(item catalog.Item, itemURL, cachePath string) string {
 func uninstallItem(item catalog.Item, itemURL, cachePath string) string {
 
 	// msix uninstall only needs the package name, no file download required
-	if item.Uninstaller.Type == "msix" {
+	if item.Uninstaller.Type == "msix" || (item.Uninstaller.Type == "" && item.Installer.Type == "msix") {
 		gorillalog.Info("Uninstalling msix for", item.DisplayName)
 		if item.Check.Appx.Name == "" {
 			msg := fmt.Sprintf("Check.Appx.Name is required for msix uninstall of %s", item.DisplayName)
