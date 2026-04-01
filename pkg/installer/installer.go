@@ -189,6 +189,12 @@ func installItem(item catalog.Item, itemURL, cachePath string) string {
 		installCmd = commandPs1
 		installArgs = []string{"-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", absFile}
 
+	} else if item.Installer.Type == "msix" {
+		gorillalog.Info("Installing msix for", item.DisplayName)
+		installCmd = commandPs1
+		installArgs = []string{"-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", fmt.Sprintf("Add-AppxPackage -Path '%s'", absFile)}
+		installArgs = append(installArgs, item.Installer.Arguments...)
+
 	} else {
 		msg := fmt.Sprint("Unsupported installer type", item.Installer.Type)
 		gorillalog.Warn(msg)
@@ -275,6 +281,17 @@ func uninstallItem(item catalog.Item, itemURL, cachePath string) string {
 		gorillalog.Info("Uninstalling ps1 for", item.DisplayName)
 		uninstallCmd = commandPs1
 		uninstallArgs = []string{"-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", absFile}
+
+	} else if item.Uninstaller.Type == "msix" {
+		gorillalog.Info("Uninstalling msix for", item.DisplayName)
+		if item.Uninstaller.PackageID == "" {
+			msg := fmt.Sprintf("PackageID is required for msix uninstall of %s", item.DisplayName)
+			gorillalog.Warn(msg)
+			return msg
+		}
+		uninstallCmd = commandPs1
+		uninstallArgs = []string{"-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", fmt.Sprintf("Get-AppxPackage -Name '%s' | Remove-AppxPackage", item.Uninstaller.PackageID)}
+		uninstallArgs = append(uninstallArgs, item.Uninstaller.Arguments...)
 
 	} else {
 		msg := fmt.Sprint("Unsupported uninstaller type", item.Uninstaller.Type)
