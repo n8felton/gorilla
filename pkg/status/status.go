@@ -229,8 +229,8 @@ func checkPath(catalogItem catalog.Item, installType string) (actionNeeded bool,
 	return actionNeeded, checkErr
 }
 
-// checkAppx checks whether an AppX/MSIX package is installed and at the required version.
-// It calls `Get-AppxPackage -Name <name>` via PowerShell and parses the Version field
+// checkAppx checks whether an AppX/MSIX package is provisioned and at the required version.
+// It calls `Get-AppxProvisionedPackage -Online` via PowerShell and parses the Version field
 // from the output to compare against the catalog version.
 func checkAppx(catalogItem catalog.Item, installType string) (actionNeeded bool, checkErr error) {
 	checkAppxItem := catalogItem.Check.Appx
@@ -239,7 +239,7 @@ func checkAppx(catalogItem catalog.Item, installType string) (actionNeeded bool,
 		"-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass",
 		"-Command",
 		fmt.Sprintf(
-			"$p = Get-AppxPackage -Name '%s' -ErrorAction SilentlyContinue; if ($p) { $p.Version } else { '' }",
+			"$p = Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq '%s' }; if ($p) { $p.Version } else { '' }",
 			checkAppxItem.Name,
 		),
 	}

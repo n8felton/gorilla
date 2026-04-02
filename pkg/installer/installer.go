@@ -192,8 +192,11 @@ func installItem(item catalog.Item, itemURL, cachePath string) string {
 	} else if item.Installer.Type == "msix" {
 		gorillalog.Info("Installing msix for", item.DisplayName)
 		installCmd = commandPs1
-		installArgs = []string{"-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", fmt.Sprintf("Add-AppxPackage -Path '%s'", absFile)}
-		installArgs = append(installArgs, item.Installer.Arguments...)
+		psCommand := fmt.Sprintf("Add-AppxProvisionedPackage -Online -PackagePath '%s' -SkipLicense", absFile)
+		if len(item.Installer.Arguments) > 0 {
+			psCommand += " " + strings.Join(item.Installer.Arguments, " ")
+		}
+		installArgs = []string{"-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", psCommand}
 
 	} else {
 		msg := fmt.Sprint("Unsupported installer type", item.Installer.Type)
@@ -227,10 +230,10 @@ func uninstallItem(item catalog.Item, itemURL, cachePath string) string {
 			gorillalog.Warn(msg)
 			return msg
 		}
-		removeCmd := fmt.Sprintf("Get-AppxPackage -Name '%s' | Remove-AppxPackage", item.Check.Appx.Name)
-		if len(item.Uninstaller.Arguments) > 0 {
-			removeCmd += " " + strings.Join(item.Uninstaller.Arguments, " ")
-		}
+		removeCmd := fmt.Sprintf(
+			"$pkg = Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq '%s' }; if ($pkg) { Remove-AppxProvisionedPackage -Online -PackageName $pkg.PackageName }; Get-AppxPackage -Name '%s' -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue",
+			item.Check.Appx.Name, item.Check.Appx.Name,
+		)
 		uninstallCmd := commandPs1
 		uninstallArgs := []string{"-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", removeCmd}
 		uninstallerOut, errOut := runCommand(uninstallCmd, uninstallArgs)

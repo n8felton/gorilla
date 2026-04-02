@@ -37,7 +37,7 @@ function Assert-AppxInstalled {
         [string]$ExpectedVersion
     )
 
-    $pkg = Get-AppxPackage -Name $Name -ErrorAction SilentlyContinue
+    $pkg = Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq $Name }
     if (-not $pkg) {
         throw "Expected AppX package '$Name' to be installed but it was not found"
     }
@@ -51,7 +51,7 @@ function Assert-AppxInstalled {
 function Assert-AppxMissing {
     param([string]$Name)
 
-    $pkg = Get-AppxPackage -Name $Name -ErrorAction SilentlyContinue
+    $pkg = Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq $Name }
     if ($pkg) {
         throw "Expected AppX package '$Name' to be uninstalled but it is still registered (version $($pkg.Version))"
     }

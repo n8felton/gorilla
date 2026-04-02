@@ -98,14 +98,12 @@ var (
 	}
 	msixItem = catalog.Item{
 		Installer: catalog.InstallerItem{
-			Arguments: []string{`-ForceApplicationShutdown`},
-			Hash:      `fcc18ed417b62314901e2712933f89e55d5900f2c3cf883100e7fcef1ef1de74`,
-			Location:  `packages/chef-client/chef-client-14.3.37-1-x64.msix`,
-			Type:      `msix`,
+			Hash:     `fcc18ed417b62314901e2712933f89e55d5900f2c3cf883100e7fcef1ef1de74`,
+			Location: `packages/chef-client/chef-client-14.3.37-1-x64.msix`,
+			Type:     `msix`,
 		},
 		Uninstaller: catalog.InstallerItem{
-			Arguments: []string{`-AllUsers`},
-			Type:      `msix`,
+			Type: `msix`,
 		},
 		Check: catalog.InstallCheck{
 			Appx: catalog.AppxCheck{
@@ -304,7 +302,7 @@ func TestInstallItem(t *testing.T) {
 	// Check the result
 	msixCmd := filepath.Join(os.Getenv("WINDIR"), "system32/WindowsPowershell/v1.0/powershell.exe")
 	msixFile := filepath.Join(pkgCache, msixPath)
-	expectedMsix := "[" + msixCmd + " -NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -Command Add-AppxPackage -Path '" + msixFile + "' -ForceApplicationShutdown]"
+	expectedMsix := "[" + msixCmd + " -NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -Command Add-AppxProvisionedPackage -Online -PackagePath '" + msixFile + "' -SkipLicense]"
 	if have, want := actualMsix, expectedMsix; have != want {
 		t.Errorf("\n-----\nhave\n%s\nwant\n%s\n-----", have, want)
 	}
@@ -435,7 +433,7 @@ func TestUninstallItem(t *testing.T) {
 	actualMsix := uninstallItem(msixItem, "", cachePath)
 	// Check the result
 	msixCmd := filepath.Join(os.Getenv("WINDIR"), "system32/WindowsPowershell/v1.0/powershell.exe")
-	expectedMsix := "[" + msixCmd + " -NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -Command Get-AppxPackage -Name 'Gorilla.Test.App' | Remove-AppxPackage -AllUsers]"
+	expectedMsix := "[" + msixCmd + " -NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -Command $pkg = Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq 'Gorilla.Test.App' }; if ($pkg) { Remove-AppxProvisionedPackage -Online -PackageName $pkg.PackageName }; Get-AppxPackage -Name 'Gorilla.Test.App' -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue]"
 	if have, want := actualMsix, expectedMsix; have != want {
 		t.Errorf("\n-----\nhave\n%s\nwant\n%s\n-----", have, want)
 	}

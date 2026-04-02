@@ -101,8 +101,6 @@ slack:
   installer:
     location: packages/apps/slack/Slack-4.49.81.0.msix
     hash: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2
-    arguments:
-      - -ForceApplicationShutdown
     type: msix
   uninstaller:
     type: msix
